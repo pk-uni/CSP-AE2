@@ -1,0 +1,9 @@
+n = 4;          
+T = 3;          % this might need to be a variable
+r = 1;          
+d = 1;          
+
+graph = [| 0, 1, 0, 0 
+         | 1, 0, 1, 1
+         | 0, 1, 0, 0
+         | 0, 1, 0, 0 |];
