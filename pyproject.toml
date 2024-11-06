@@ -1,0 +1,7 @@
+[project]
+name = "csp-ae2"
+version = "0.1.0"
+description = "Cosntraint Programming - Firefighting Infectious Defence Problem"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["networkx>=3.1", "ortools>=9.11.4210"]

@@ -1,2 +1,4 @@
 cp-venv/
 .vscode/
+.venv/
+.DS_Store
