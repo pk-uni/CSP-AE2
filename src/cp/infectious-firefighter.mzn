@@ -35,7 +35,7 @@ function var bool: defended_just_now(var int: x, var int: t) =
 % defence spreads
 constraint forall(t in 1..T)(
   forall(x in 1..n where defended[x,t-1]==1)(
-    forall(y in 1..n where graph[x,y]==1 /\ burned[y,t-1]==0)(defended[y,t]==1)));
+    forall(y in 1..n where graph[x,y]==1 /\ (burned[y,t-1]==0))(defended[y,t]==1)));
 
 % for every vertex that was defended in the previous round
 % check all its neighbours
