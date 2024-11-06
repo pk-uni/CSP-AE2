@@ -1,9 +1,9 @@
 % setup
-int: n;                                    % number of vertices
-int: T;                                    % number of timesteps
-int: r;                                    % root vertex where fire starts
-int: d;                                    % number of defenders per timestep
-array[1..n, 1..n] of 0..1: graph;         % adjacency matrix
+int: n;                                   % no vertices
+int: T;                                   % no timesteps
+int: r;                                   % root
+int: d;                                   % no defenders per timestep
+array[1..n, 1..n] of 0..1: graph;         
 
 % variables
 array[1..n, 0..T] of var 0..1: burned;    % burned[x,t] = if vertex x is burned at time t then 1 else 0
@@ -25,18 +25,17 @@ constraint forall(t in 1..T)(forall(x in 1..n)(forall(y in 1..n where graph[x,y]
 
 % single state per vertex
 constraint forall(t in 1..T)(forall(x in 1..n)(burned[x,t] + defended[x,t] <= 1));
-constraint forall(t in 1..T)(forall(x in 1..n)(burned[x,t-1] + defended[x,t] <= 1));
+% constraint forall(t in 1..T)(forall(x in 1..n)(burned[x,t-1] + defended[x,t] <= 1));
 
 % no spontaneous combustion
-constraint forall(t in 1..T)(forall(x in 1..n)(burned[x,t] >= sum(y in 1..n where graph[x,y]==1)(burned[y,t-1])));
+constraint forall(t in 1..T)(forall(x in 1..n where burned[x,t-1] == 0)(burned[x,t] <= sum(y in 1..n where graph[x,y]==1)(burned[y,t-1])));
 
-% at most d defenders
+% at most d defenders per timestep
 constraint forall(t in 1..T)(sum(x in 1..n)(defended[x,t] - defended[x,t-1]) <= d);
 
 % objective
 solve minimize sum(x in 1..n)(burned[x,T]);
 
-% output
 output [
   "Time " ++ show(t) ++ ":\n" ++
   "Burned: " ++ show([if fix(burned[i,t]) == 1 then i else 0 endif | i in 1..n]) ++ "\n" ++

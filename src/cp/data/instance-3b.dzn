@@ -1,0 +1,10 @@
+n = 6;
+T = 4;
+r = 1;
+d = 1;
+graph = [| false, true, true, false, false, false
+         | true, false, true, true, false, false
+         | true, true, false, false, true, false
+         | false, true, false, false, true, true
+         | false, false, true, true, false, true
+         | false, false, false, true, true, false |];
