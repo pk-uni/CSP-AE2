@@ -1,5 +1,5 @@
-infect : 
-	minizinc src/cp/infectious-firefighter-v3.mzn src/cp/data/instance-3-v2.dzn
+idf : 
+	minizinc src/cp/infectious-defence.mzn src/cp/data/instance-$(DATA).dzn
 
-std:
-	minizinc src/cp/firefighter.mzn src/cp/data/instance-3.dzn
+base:
+	minizinc src/cp/base/integer.mzn src/cp/data/instance-$(DATA).dzn

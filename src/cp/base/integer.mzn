@@ -1,13 +1,13 @@
 % setup
-int: n;                                   % no vertices
-int: T;                                   % no timesteps
-int: r;                                   % root
-int: d;                                   % no defenders per timestep
+int: n;                                     % no vertices
+int: T=n*2;                                 % no phases
+int: r;                                     % root
+int: d;                                     % no defenders per timestep
 array[1..n, 1..n] of 0..1: graph;         
 
 % variables
-array[1..n, 0..T] of var 0..1: burned;    % burned[x,t] = if vertex x is burned at time t then 1 else 0
-array[1..n, 0..T] of var 0..1: defended;  % defended[x,t] = if vertex x is defended at time t then 1 else 0
+array[1..n, 0..T] of var 0..1: burned;      % burned[x,t] = if vertex x is burned at time t then 1 else 0
+array[1..n, 0..T] of var 0..1: defended;    % defended[x,t] = if vertex x is defended at time t then 1 else 0
 
 % constraints
 

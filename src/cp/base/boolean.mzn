@@ -1,13 +1,13 @@
 % setup
-int: n;                                   % no vertices
-int: T;                                   % no timesteps
-int: r;                                   % root
-int: d;                                   % no defenders per timestep
-array[1..n, 1..n] of bool: graph;        % using bool instead of 0..1 for graph
+int: n;                                     % no vertices
+int: T=2*n;                                 % no phases
+int: r;                                     % root
+int: d;                                     % no defenders per timestep
+array[1..n, 1..n] of bool: graph;           % using bool instead of 0..1 for graph
 
 % variables
-array[1..n, 0..T] of var bool: burned;    % burned[x,t] = true if vertex x is burned at time t
-array[1..n, 0..T] of var bool: defended;  % defended[x,t] = true if vertex x is defended at time t
+array[1..n, 0..T] of var bool: burned;      % burned[x,t] = x == burned at t
+array[1..n, 0..T] of var bool: defended;    % defended[x,t] = x == defended at t
 
 % helper functions for boolean comparisons
 function var bool: bool_geq(var bool: a, var bool: b) = 
