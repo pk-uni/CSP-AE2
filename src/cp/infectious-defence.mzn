@@ -1,8 +1,8 @@
 % setup
 int: n;                                   % no vertices
 int: r;                                   % root
-int: T; % ! does not work with complete graph - compute distance of graph
-int: d=1;
+int: T;
+int: d;
 int: phases=3;
 array[1..n, 1..n] of 0..1: graph;         
 

@@ -1,13 +1,13 @@
 from ortools.linear_solver import pywraplp
 
 
-def generate_solver(n, r, graph):
+def generate_solver(n, r, D, graph):
 
     solver = pywraplp.Solver.CreateSolver("SCIP")
 
     DEFENCE_BUDGET = 1
     PHASES = 3
-    T = n * PHASES
+    T = D * PHASES
 
     burned = {}
     defended = {}

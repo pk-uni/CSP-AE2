@@ -1,4 +1,4 @@
-from utils import parse_networkx
+from utils import parse_networkx, graph_diameter
 import cp.main as cp
 import ilp.main as ilp
 
@@ -15,10 +15,10 @@ import ilp.main as ilp
 # (The dictionary structure is so you can return other things if it's
 # useful for your pipeline)
 def run_ilp(instance_graph, start_node=1, timeout=1000):
-    n, r, graph = parse_networkx(instance_graph, start_node)
+    n, r, D, graph = parse_networkx(instance_graph, start_node)
 
-    (solver, ctx) = ilp.generate_solver(n, r, graph)
-    num_saved = ilp.solve(solver, ctx, n, n * 3)
+    (solver, ctx) = ilp.generate_solver(n, r, D, graph)
+    num_saved = ilp.solve(solver, ctx, n, D)
 
     return {"num_saved": num_saved}
 
@@ -39,9 +39,9 @@ def run_ilp(instance_graph, start_node=1, timeout=1000):
 # For example, you could create a .dzn file in whatever encoding you want
 # and add it using the https://python.minizinc.dev/en/latest/api.html#minizinc.model.Model.add_file capability
 def run_cp(instance_graph, start_node=1, timeout=1000):
-    n, r, graph = parse_networkx(instance_graph, start_node)
+    n, r, D, graph = parse_networkx(instance_graph, start_node)
 
-    instance = cp.generate_solver(n, r, graph)
+    instance = cp.generate_solver(n, r, D, graph)
     num_saved = cp.solve(instance, n)
 
     return {"num_saved": num_saved}

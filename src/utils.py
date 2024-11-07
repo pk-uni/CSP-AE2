@@ -1,3 +1,6 @@
+import networkx as nx
+
+
 def parse_networkx(instance_graph, start_node):
     nodes_map = {node: idx for idx, node in enumerate(instance_graph.nodes)}
     edges = [(nodes_map[u], nodes_map[v]) for u, v in instance_graph.edges]
@@ -10,4 +13,11 @@ def parse_networkx(instance_graph, start_node):
         graph[u][v] = 1
         graph[v][u] = 1
 
-    return n, r, graph
+    D = graph_diameter(instance_graph, start_node)
+
+    return n, r, D, graph
+
+
+def graph_diameter(instance_graph, start_node):
+    paths = nx.single_source_shortest_path_length(instance_graph, start_node).values()
+    return max(paths)

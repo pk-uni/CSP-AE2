@@ -36,13 +36,13 @@ def skeleton_runs():
     runs_results["path_start_mid"] = {"cp": cp, "ilp": ilp}
 
     # # in a complete graph all but one vertex should burn
-    # graph = nx.complete_graph(12)
-    # cp, ilp = run_trial(graph, start=0)
-    # runs_results["complete"] = {"cp": cp, "ilp": ilp}
+    graph = nx.complete_graph(12)
+    cp, ilp = run_trial(graph, start=0)
+    runs_results["complete"] = {"cp": cp, "ilp": ilp}
 
-    # graph = nx.grid_2d_graph(10, 10)
-    # cp, ilp = run_trial(graph, start=(4, 5))
-    # runs_results["grid"] = {"cp": cp, "ilp": ilp}
+    graph = nx.grid_2d_graph(10, 10)
+    cp, ilp = run_trial(graph, start=(4, 5))
+    runs_results["grid"] = {"cp": cp, "ilp": ilp}
 
     return runs_results
 
