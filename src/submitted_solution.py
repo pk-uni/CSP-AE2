@@ -1,6 +1,6 @@
 from utils import parse_networkx
-import cp
-import ilp
+import cp.main as cp
+import ilp.main as ilp
 
 
 #
