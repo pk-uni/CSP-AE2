@@ -4,4 +4,9 @@ version = "0.1.0"
 description = "Cosntraint Programming - Firefighting Infectious Defence Problem"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["networkx>=3.1", "ortools>=9.11.4210"]
+dependencies = [
+    "minizinc>=0.9.0",
+    "networkx>=3.1",
+    "ortools>=9.11.4210",
+    "scipy>=1.14.1",
+]

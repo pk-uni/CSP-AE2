@@ -1,9 +1,9 @@
 % setup
 int: n;                                   % no vertices
 int: r;                                   % root
-int: d;
+int: T; % ! does not work with complete graph - compute distance of graph
+int: d=1;
 int: phases=3;
-int: T = n*phases;
 array[1..n, 1..n] of 0..1: graph;         
 
 % variables
@@ -83,13 +83,16 @@ constraint forall(t in 1..T where phase(t) == 3)(
 );
 
 % objective
-solve minimize sum(x in 1..n)(burned[x,T]);
+var int: unburned = sum(x in 1..n)(burned[x,T]);
+solve minimize unburned;
 
-output [
-  "t: " ++ show(t) ++ "\n" ++
-  "Round: " ++ show(round(t)) ++ "." ++ show(phase(t)) ++ "\n" ++
-  "Burned:\t\t" ++ show([if fix(burned[i,t]) == 1 then i else 0 endif | i in 1..n]) ++ "\n" ++
-  "Defended:\t" ++ show([if fix(defended[i,t]) == 1 then i else 0 endif | i in 1..n]) ++ "\n\n"
-  | t in 0..T
-];
+output [show(unburned)]
+
+% output [
+%   "t: " ++ show(t) ++ "\n" ++
+%   "Round: " ++ show(round(t)) ++ "." ++ show(phase(t)) ++ "\n" ++
+%   "Burned:\t\t" ++ show([if fix(burned[i,t]) == 1 then i else 0 endif | i in 1..n]) ++ "\n" ++
+%   "Defended:\t" ++ show([if fix(defended[i,t]) == 1 then i else 0 endif | i in 1..n]) ++ "\n\n"
+%   | t in 0..T
+% ];
 

@@ -1,108 +1,106 @@
 from ortools.linear_solver import pywraplp
-import networkx as nx
-from typing import Dict, Tuple, List
 
 
-class InfectiousFirefighter:
-    def __init__(self, graph: nx.Graph, root: int, defenders: int):
-        """
-        Initialize the Infectious Firefighter solver.
+def solve_firefighter(n, r, graph):
 
-        Args:
-            graph (nx.Graph): The input graph
-            root (int): The starting vertex for the fire
-            defenders (int): Number of defenders that can be placed per round
-        """
-        # Store input parameters
-        self.graph = graph
-        self.root = root
-        self.defenders = defenders
+    solver = pywraplp.Solver.CreateSolver("SCIP")
 
-        # Derived parameters
-        self.n_vertices = graph.number_of_nodes()
-        self.phases = 3
-        self.T = self.n_vertices * self.phases  # Maximum possible timesteps
+    # TODO: use graph diameter (3 phases per round, diameter(graph) rounds)
+    T = n * 3
+    d = 1
+    burned = {}
+    defended = {}
 
-        # Initialize solver
-        self.solver = pywraplp.Solver.CreateSolver("SCIP")
+    for v in range(1, n + 1):
+        for t in range(T + 1):
+            burned[v, t] = solver.IntVar(0, 1, f"burned_{v}_{t}")
+            defended[v, t] = solver.IntVar(0, 1, f"defended_{v}_{t}")
 
-        # Initialize variables dictionary
-        self.burned: Dict[Tuple[int, int], pywraplp.Variable] = {}
-        self.defended: Dict[Tuple[int, int], pywraplp.Variable] = {}
+    neighbours = lambda x, y: graph[x - 1][y - 1] == 1
 
-        # Create variables
-        self._create_variables()
+    # Initial conditions
+    # root starts burning
+    solver.Add(burned[r, 0] == 1)
 
-    def _create_variables(self):
-        """Create binary variables for burned and defended states."""
-        # Create variables for each vertex and timestep
-        for v in self.graph.nodes():
-            for t in range(self.T + 1):  # Include time 0
-                # Binary variable for burned state
-                self.burned[v, t] = self.solver.BoolVar(f"b_{v}_{t}")
-                # Binary variable for defended state
-                self.defended[v, t] = self.solver.BoolVar(f"d_{v}_{t}")
+    # all other vertices start unburned
+    for v in range(1, n + 1):
+        if v != r:
+            solver.Add(burned[v, 0] == 0)
 
-    def get_phase(self, t: int) -> int:
-        """Get the phase (1-3) for a given timestep."""
-        if t == 0:
-            return 0
-        return ((t - 1) % self.phases) + 1
+    # no vertices start defended
+    for v in range(1, n + 1):
+        solver.Add(defended[v, 0] == 0)
 
-    def get_round(self, t: int) -> int:
-        """Get the round number for a given timestep."""
-        if t == 0:
-            return 0
-        return ((t - 1) // self.phases) + 1
+    # State exclusivity
+    for t in range(T + 1):
+        for v in range(1, n + 1):
+            solver.Add(burned[v, t] + defended[v, t] <= 1)
 
-    def neighbors(self, v: int) -> List[int]:
-        """Get neighbors of vertex v."""
-        return list(self.graph.neighbors(v))
+    # Permanence constraints
+    for t in range(1, T + 1):
+        for v in range(1, n + 1):
+            solver.Add(burned[v, t] >= burned[v, t - 1])
+            solver.Add(defended[v, t] >= defended[v, t - 1])
 
-    def add_initial_conditions(self):
-        """Add constraints for initial conditions."""
-        # Root vertex starts burning
-        self.solver.Add(self.burned[self.root, 0] == 1)
+    # phase 1: defense placement
+    for t in range(1, T + 1, 3):
+        solver.Add(
+            sum(defended[v, t] - defended[v, t - 1] for v in range(1, n + 1)) <= d
+        )
+        # only defence placement in phase 1
+        for v in range(1, n + 1):
+            solver.Add(burned[v, t] == burned[v, t - 1])
 
-        # All other vertices start unburned
-        for v in self.graph.nodes():
-            if v != self.root:
-                self.solver.Add(self.burned[v, 0] == 0)
+    # phase 2: fire spread
+    for t in range(2, T + 1, 3):
+        for x in range(1, n + 1):
+            for y in range(1, n + 1):
+                if neighbours(x, y):
+                    solver.Add(burned[x, t] + defended[x, t] >= burned[y, t - 1])
 
-        # No initial defenses
-        for v in self.graph.nodes():
-            self.solver.Add(self.defended[v, 0] == 0)
+        # only fire spread in phase 2
+        for x in range(1, n + 1):
+            solver.Add(defended[x, t] == defended[x, t - 1])
 
-    def solve(self) -> bool:
-        """
-        Solve the ILP.
+    # phase 3:
+    for t in range(3, T + 1, 3):
+        for x in range(1, n + 1):
+            for y in range(1, n + 1):
+                if graph[x - 1][y - 1] == 1:
+                    solver.Add(
+                        defended[x, t]
+                        >= defended[y, t - 1] + (1 - burned[x, t - 1]) - 1
+                    )
 
-        Returns:
-            bool: True if a solution was found, False otherwise
-        """
-        status = self.solver.Solve()
-        return status == pywraplp.Solver.OPTIMAL
+        # Fire can't spread during defense spread
+        for x in range(1, n + 1):
+            solver.Add(burned[x, t] == burned[x, t - 1])
 
-    def get_solution(self) -> Dict[str, List[List[int]]]:
-        """
-        Get the solution as a dictionary of burned and defended vertices at each timestep.
+    # minimise total burned vertices at time T
+    objective = solver.Objective()
 
-        Returns:
-            Dict containing lists of burned and defended vertices at each timestep
-        """
-        if not self.solve():
-            return None
+    for v in range(1, n + 1):
+        objective.SetCoefficient(burned[v, T], 1)
 
-        solution = {
-            "burned": [[] for _ in range(self.T + 1)],
-            "defended": [[] for _ in range(self.T + 1)],
-        }
+    objective.SetMinimization()
 
-        for t in range(self.T + 1):
-            for v in self.graph.nodes():
-                if self.burned[v, t].solution_value() > 0.5:
-                    solution["burned"][t].append(v)
-                if self.defended[v, t].solution_value() > 0.5:
-                    solution["defended"][t].append(v)
+    return solver, burned, defended
 
-        return solution
+
+# nuke if not used
+def print_solution(solver, burned, defended, n, T):
+    """Helper function to print the solution in a readable format"""
+    if solver.Solve() == pywraplp.Solver.OPTIMAL:
+        print(f"Optimal solution found!")
+        for t in range(T + 1):
+            print(f"\nt={t} (Round {t//3 + 1}, Phase {t%3 + 1})")
+            print(
+                "Burned vertices:",
+                [v for v in range(1, n + 1) if burned[v, t].solution_value() > 0.5],
+            )
+            print(
+                "Defended vertices:",
+                [v for v in range(1, n + 1) if defended[v, t].solution_value() > 0.5],
+            )
+    else:
+        print("No solution found.")
