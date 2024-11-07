@@ -1,0 +1,24 @@
+.
+├── README.md
+├── pyproject.toml
+├── src
+│   ├── cp
+│   │   ├── base
+│   │   │   ├── boolean.mzn
+│   │   │   └── integer.mzn
+│   │   ├── data
+│   │   │   ├── instance-1.dzn
+│   │   │   ├── instance-2.dzn
+│   │   │   ├── instance-3.dzn
+│   │   │   ├── instance-4.dzn
+│   │   │   ├── instance-4b.dzn
+│   │   │   └── instance-5.dzn
+│   │   ├── infectious-defence.mzn
+│   │   └── main.py
+│   ├── ilp
+│   │   └── main.py
+│   ├── lecturer_code.py
+│   ├── submitted_solution.py
+│   └── utils.py
+└── uv.lock
+

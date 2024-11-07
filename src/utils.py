@@ -2,7 +2,7 @@ import networkx as nx
 
 
 def parse_networkx(instance_graph, start_node):
-    nodes_map = {node: idx for idx, node in enumerate(instance_graph.nodes)}
+    nodes_map = {node: (idx + 1) for idx, node in enumerate(instance_graph.nodes)}
     edges = [(nodes_map[u], nodes_map[v]) for u, v in instance_graph.edges]
 
     n = len(instance_graph.nodes)
@@ -10,8 +10,8 @@ def parse_networkx(instance_graph, start_node):
 
     graph = [[0] * n for _ in range(n)]
     for u, v in edges:
-        graph[u][v] = 1
-        graph[v][u] = 1
+        graph[u - 1][v - 1] = 1
+        graph[v - 1][u - 1] = 1
 
     D = graph_diameter(instance_graph, start_node)
 

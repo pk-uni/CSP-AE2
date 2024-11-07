@@ -17,8 +17,8 @@ import ilp.main as ilp
 def run_ilp(instance_graph, start_node=1, timeout=1000):
     n, r, D, graph = parse_networkx(instance_graph, start_node)
 
-    (solver, ctx) = ilp.generate_solver(n, r, D, graph)
-    num_saved = ilp.solve(solver, ctx, n, D)
+    (solver, burned, defended) = ilp.generate_solver(n, r, D, graph)
+    num_saved = ilp.solve(solver, burned, defended, n, D)
 
     return {"num_saved": num_saved}
 

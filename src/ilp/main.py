@@ -35,6 +35,11 @@ def generate_solver(n, r, D, graph):
     for t in range(T + 1):
         for v in range(n):
             solver.Add(burned[(v, t)] + defended[(v, t)] <= 1)
+            # vertices can either be: burning, defended or unaffected
+            solver.Add(burned[(v, t)] <= 1)
+            solver.Add(burned[(v, t)] >= 0)
+            solver.Add(defended[(v, t)] <= 1)
+            solver.Add(defended[(v, t)] >= 0)
 
     # permanence
     for t in range(1, T + 1):
@@ -85,11 +90,18 @@ def generate_solver(n, r, D, graph):
 
     objective.SetMinimization()
 
-    return solver, burned
+    return solver, burned, defended
 
 
-def solve(solver, burned, n, T):
+def solve(solver, burned, defended, n, T):
     status = solver.Solve()
+
+    for ti in range(T + 1):
+        defended_a = [f"{defended[(v, ti)].solution_value():.3f}" for v in range(n)]
+        burned_a = [f"{burned[(v, ti)].solution_value():.3f}" for v in range(n)]
+        print(f"-- {defended_a}")
+        print(f"-- {burned_a}")
+        print()
 
     if status == pywraplp.Solver.OPTIMAL:
         final_burned = [v for v in range(n) if burned[(v, T)].solution_value() > 0.5]
