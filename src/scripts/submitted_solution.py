@@ -43,11 +43,11 @@ def parse_networkx(instance_graph, start_node):
 def run_ilp(instance_graph, start_node=1, timeout=1000):
     n, r, graph = parse_networkx(instance_graph, start_node)
 
-    (solver, burned, defended) = solve_firefighter(n, r, graph)
+    (solver, burned) = generate_solver(n, r, graph)
 
-    print_solution(solver, burned, defended, n, n * 3)
+    num_saved = get_solution(solver, burned, n, n * 3)
 
-    return {"num_saved": -1}
+    return {"num_saved": num_saved}
 
 
 #
@@ -90,106 +90,107 @@ def run_cp(instance_graph, start_node=1, timeout=1000):
 # ----------
 
 
-def solve_firefighter(n, r, graph):
+def generate_solver(n, r, graph):
 
     solver = pywraplp.Solver.CreateSolver("SCIP")
 
     # TODO: use graph diameter (3 phases per round, diameter(graph) rounds)
-    T = n * 3
-    d = 1
-    burned = {v: {} for v in range(1, n + 1)}
-    defended = {v: {} for v in range(1, n + 1)}
+    DEFENCE_BUDGET = 1
+    PHASES = 3
+    T = n * PHASES
 
-    for v in range(1, n + 1):
+    burned = {}
+    defended = {}
+
+    for v in range(n):
         for t in range(T + 1):
-            burned[v][t] = solver.IntVar(0, 1, f"burned_{v}_{t}")
-            defended[v][t] = solver.IntVar(0, 1, f"defended_{v}_{t}")
+            burned[(v, t)] = solver.IntVar(0, 1, f"burned_{v}_{t}")
+            defended[(v, t)] = solver.IntVar(0, 1, f"defended_{v}_{t}")
 
     neighbours = lambda x, y: graph[x - 1][y - 1] == 1
 
     # Initial conditions
     # root starts burning
-    solver.Add(burned[r][0] == 1)
+    solver.Add(burned[(r, 0)] == 1)
 
     # all other vertices start unburned
-    for v in range(1, n + 1):
+    for v in range(n):
         if v != r:
-            solver.Add(burned[v][0] == 0)
+            solver.Add(burned[(v, 0)] == 0)
 
     # no vertices start defended
-    for v in range(1, n + 1):
-        solver.Add(defended[v][0] == 0)
+    for v in range(n):
+        solver.Add(defended[(v, 0)] == 0)
 
     # State exclusivity
     for t in range(T + 1):
-        for v in range(1, n + 1):
-            solver.Add(burned[v][t] + defended[v][t] <= 1)
+        for v in range(n):
+            solver.Add(burned[(v, t)] + defended[(v, t)] <= 1)
 
     # Permanence constraints
     for t in range(1, T + 1):
-        for v in range(1, n + 1):
-            solver.Add(burned[v][t] >= burned[v][t - 1])
-            solver.Add(defended[v][t] >= defended[v][t - 1])
+        for v in range(n):
+            solver.Add(burned[(v, t)] >= burned[(v, t - 1)])
+            solver.Add(defended[(v, t)] >= defended[(v, t - 1)])
 
-    # phase 1: defence placement
-    for t in range(1, T + 1, 3):
+    # phase 1: defense placement
+    for t in range(1, T + 1, PHASES):
         solver.Add(
-            sum(defended[v][t] - defended[v][t - 1] for v in range(1, n + 1)) <= d
+            sum(defended[(v, t)] - defended[(v, t - 1)] for v in range(n))
+            <= DEFENCE_BUDGET
         )
         # only defence placement in phase 1
-        for v in range(1, n + 1):
-            solver.Add(burned[v][t] == burned[v][t - 1])
+        for v in range(n):
+            solver.Add(burned[(v, t)] == burned[(v, t - 1)])
 
     # phase 2: fire spread
-    for t in range(2, T + 1, 3):
-        for x in range(1, n + 1):
-            for y in range(1, n + 1):
+    for t in range(2, T + 1, PHASES):
+        for x in range(n):
+            for y in range(n):
                 if neighbours(x, y):
-                    solver.Add(burned[x][t] + defended[x][t] >= burned[y][t - 1])
+                    solver.Add(burned[(x, t)] + defended[(x, t)] >= burned[(y, t - 1)])
 
         # only fire spread in phase 2
-        for x in range(1, n + 1):
-            solver.Add(defended[x][t] == defended[x][t - 1])
+        for x in range(n):
+            solver.Add(defended[(x, t)] == defended[(x, t - 1)])
 
     # phase 3: defence spread
-    for t in range(3, T + 1, 3):
-        for x in range(1, n + 1):
-            for y in range(1, n + 1):
+    for t in range(3, T + 1, PHASES):
+        for x in range(n):
+            for y in range(n):
                 if neighbours(x, y):
                     solver.Add(
-                        defended[x][t]
-                        >= defended[y][t - 1] + (1 - burned[x][t - 1]) - 1
+                        defended[(x, t)]
+                        >= defended[(y, t - 1)] + (1 - burned[(x, t - 1)]) - 1
                     )
 
-        # only defence spread in phase 3
-        for x in range(1, n + 1):
-            solver.Add(burned[x][t] == burned[x][t - 1])
+        # only defence spread in phase
+        for x in range(n):
+            solver.Add(burned[(x, t)] == burned[(x, t - 1)])
 
     # minimise total burned vertices at time T
     objective = solver.Objective()
 
-    for v in range(1, n + 1):
-        objective.SetCoefficient(burned[v][T], 1)
+    for v in range(n):
+        objective.SetCoefficient(burned[(v, T)], 1)
 
     objective.SetMinimization()
 
-    return solver, burned, defended
+    return solver, burned
 
 
 # nuke if not used
-def print_solution(solver, burned, defended, n, T):
-    """Helper function to print the solution in a readable format"""
-    if solver.Solve() == pywraplp.Solver.OPTIMAL:
-        print(f"Optimal solution found!")
-        for t in range(T + 1):
-            print(f"\nt={t} (Round {t//3 + 1}, Phase {t%3 + 1})")
-            print(
-                "Burned vertices:",
-                [v for v in range(1, n + 1) if burned[v][t].solution_value() > 0.5],
-            )
-            print(
-                "Defended vertices:",
-                [v for v in range(1, n + 1) if defended[v][t].solution_value() > 0.5],
-            )
-    else:
-        print("No solution found.")
+def get_solution(solver, burned, n, T):
+    status = solver.Solve()
+
+    if status == pywraplp.Solver.OPTIMAL:
+        final_burned = [v for v in range(n) if burned[(v, T)].solution_value() > 0.5]
+        return n - len(final_burned)
+
+    elif status == pywraplp.Solver.INFEASIBLE:
+        print("Problem is infeasible")
+        return -1
+
+    elif status == pywraplp.Solver.UNBOUNDED:
+        print("Problem is unbounded")
+        return -1
