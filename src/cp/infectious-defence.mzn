@@ -83,10 +83,7 @@ constraint forall(t in 1..T where phase(t) == 3)(
 );
 
 % objective
-var int: unburned = sum(x in 1..n)(burned[x,T]);
-solve minimize unburned;
-
-output [show(unburned)]
+solve minimize sum(x in 1..n)(burned[x,T]);
 
 % output [
 %   "t: " ++ show(t) ++ "\n" ++
